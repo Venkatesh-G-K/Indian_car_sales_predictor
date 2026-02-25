@@ -118,26 +118,50 @@ LUXURY_BRANDS = {"Mercedes-Benz","BMW","Audi","Jaguar","Porsche",
 # ── Load model artifacts ──────────────────────────────────────
 @st.cache_resource
 def load_artifacts():
-    """Load model, scaler, encoders from disk."""
-    # Search common locations
-    search_dirs = [".", "./ml_output_indian_used_cars_raw_57480",
-                   "/content/ml_output_indian_used_cars_raw_57480",
-                   "/content/ml_output_indian_used_cars_raw_57480 (1)",
-                   "/content/ml_output_indian_used_cars_raw_57480 (2)",
-                   "/content/ml_output_indian_used_cars_raw_57480 (3)"]
+    """Load model, scaler, encoders - works locally and on Streamlit Cloud."""
+    base = os.path.dirname(os.path.abspath(__file__))
+
+    # Build exhaustive search list
+    search_dirs = [base, os.path.join(base, "ml_output")]
+    try:
+        for item in os.listdir(base):
+            full = os.path.join(base, item)
+            if os.path.isdir(full) and "ml_output" in item:
+                search_dirs.append(full)
+    except Exception:
+        pass
 
     for d in search_dirs:
-        for fname in os.listdir(d) if os.path.isdir(d) else []:
+        if not os.path.isdir(d):
+            continue
+        try:
+            files = os.listdir(d)
+        except Exception:
+            continue
+        for fname in files:
             if fname.startswith("best_model") and fname.endswith(".pkl"):
                 model_path   = os.path.join(d, fname)
                 scaler_path  = os.path.join(d, "scaler.pkl")
                 encoder_path = os.path.join(d, "encoders.pkl")
                 if os.path.exists(scaler_path) and os.path.exists(encoder_path):
-                    return (joblib.load(model_path),
-                            joblib.load(scaler_path),
-                            joblib.load(encoder_path),
-                            fname.replace("best_model_","").replace(".pkl","").replace("_"," "))
+                    try:
+                        return (joblib.load(model_path),
+                                joblib.load(scaler_path),
+                                joblib.load(encoder_path),
+                                fname.replace("best_model_","").replace(".pkl","").replace("_"," "))
+                    except Exception as e:
+                        st.error(f"Found files but failed to load: {e}")
+                        return None, None, None, None
 
+    # Debug info to diagnose on Streamlit Cloud
+    st.warning(f"Searched in: {search_dirs}")
+    st.warning(f"Files at root: {os.listdir(base)}")
+    try:
+        ml_path = os.path.join(base, "ml_output")
+        if os.path.isdir(ml_path):
+            st.warning(f"Files in ml_output/: {os.listdir(ml_path)}")
+    except Exception:
+        pass
     return None, None, None, None
 
 # ── Prediction logic ──────────────────────────────────────────
