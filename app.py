@@ -356,6 +356,7 @@ with col_results:
 st.markdown("---")
 st.markdown(
     "<div style='text-align:center; color:#555; font-size:0.85rem'>"
+    "Venkat's - "
     "Trained on 57,000+ Indian used car listings · Prices are estimates only · "
     "Always verify with a certified mechanic before purchasing"
     "</div>",
